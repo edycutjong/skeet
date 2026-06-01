@@ -106,4 +106,55 @@ describe('Signals statistics engine tests', () => {
     sigs.update(96);
     expect(sigs.isReversalDetected()).toBe(true);
   });
+
+  test('Peak price, price history, and volume queue limits', () => {
+    const sigs = new Signals(5, 20);
+    sigs.update(100, 10);
+    
+    expect(sigs.getPeakPrice()).toBe(100);
+    expect(sigs.getPriceHistory()).toEqual([100]);
+
+    // Push 21 volumes to trigger tradeVolumes.shift()
+    for (let i = 0; i < 22; i++) {
+      sigs.update(100 + i, i + 1);
+    }
+    // Also priceHistory exceeds 100 limit (if we update it 101 times)
+    for (let i = 0; i < 100; i++) {
+      sigs.update(200 + i, 5);
+    }
+    expect(sigs.getPriceHistory().length).toBe(100);
+  });
+
+  test('Reversal branch coverages for tickCount and EMAs', () => {
+    const sigs = new Signals(5, 20);
+    sigs.update(100);
+    // tickCount is 1 (<= 5). Force emaFast < emaSlow
+    (sigs as any).state.emaFast = 90;
+    (sigs as any).state.emaSlow = 100;
+    expect(sigs.isReversalDetected()).toBe(false); // fails tickCount > 5 check
+
+    // Make tickCount 6 but emaFast >= emaSlow
+    for (let i = 0; i < 5; i++) {
+      sigs.update(100);
+    }
+    (sigs as any).state.emaFast = 105;
+    (sigs as any).state.emaSlow = 100;
+    expect(sigs.isReversalDetected()).toBe(false); // fails emaFast < emaSlow check
+
+    // Make tickCount 6 and emaFast < emaSlow (should return true)
+    (sigs as any).state.emaFast = 95;
+    (sigs as any).state.emaSlow = 100;
+    expect(sigs.isReversalDetected()).toBe(true);
+  });
+
+  test('computeRealizedVol NaN handling', () => {
+    const sigs = new Signals(5, 20);
+    sigs.update(100);
+    sigs.update(101);
+    // Inject NaN into logReturns
+    (sigs as any).logReturns = [NaN, NaN];
+    // Trigger update to compute volatility
+    sigs.update(102);
+    expect(sigs.getRealizedVol()).toBe(0.05); // returns fallback 0.05
+  });
 });

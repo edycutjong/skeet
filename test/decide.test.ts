@@ -14,7 +14,8 @@ const mockConfig: AgentConfig = {
   START_BANKROLL: 10000,
   DRAWDOWN_FLOOR_PCT: 0.30,
   MIN_SIZE_USDC: 50,
-  PREDATOR_ENABLED: false
+  PREDATOR_ENABLED: false,
+  MAX_DAILY_LOSS_USDC: 2000
 };
 
 describe('Core decide state machine tests', () => {
@@ -172,5 +173,50 @@ describe('Core decide state machine tests', () => {
     };
     const action = decide(ctx, stats, mockConfig);
     expect(action.type).toBe("SELL_ALL");
+  });
+
+  test('Predator-override logic under decide', () => {
+    const predatorConfig: AgentConfig = {
+      ...mockConfig,
+      PREDATOR_ENABLED: true
+    };
+
+    const ctx: GameContext = {
+      phase: "TRADING",
+      t: 20,
+      price: 100,
+      reserves: 50000,
+      position: 0,
+      entryPrice: 0,
+      bankroll: 10000,
+      peakBankroll: 10000
+    };
+
+    // 1. Predator action = BUY -> should BUY if t < entry deadline and size > min
+    const actionBuy = decide(ctx, stats, predatorConfig, 0.6, 'BUY');
+    expect(actionBuy.type).toBe('BUY');
+    expect(actionBuy.amount).toBeGreaterThan(0);
+
+    // 2. Predator action = BUY but size is too small -> should HOLD
+    const actionBuySmall = decide(ctx, stats, predatorConfig, 0.4, 'BUY'); // lower win rate = smaller size
+    expect(actionBuySmall.type).toBe('HOLD');
+
+    // 3. Predator action = SELL when holding position -> should SELL_ALL
+    ctx.position = 10;
+    const actionSell = decide(ctx, stats, predatorConfig, 0.6, 'SELL');
+    expect(actionSell.type).toBe('SELL_ALL');
+
+    // 4. Predator action = SELL but not holding position -> should HOLD
+    ctx.position = 0;
+    const actionSellNoPos = decide(ctx, stats, predatorConfig, 0.6, 'SELL');
+    expect(actionSellNoPos.type).toBe('HOLD');
+
+    // 5. Predator action = HOLD -> should fallback to normal momentum logic
+    const actionHold = decide(ctx, stats, predatorConfig, 0.6, 'HOLD');
+    expect(actionHold.type).toBe('HOLD');
+
+    // 6. Predator action = BUY but PREDATOR_ENABLED is false -> should HOLD (ignored)
+    const actionDisabled = decide(ctx, stats, mockConfig, 0.6, 'BUY');
+    expect(actionDisabled.type).toBe('HOLD');
   });
 });

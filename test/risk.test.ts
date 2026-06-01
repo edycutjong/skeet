@@ -13,7 +13,8 @@ const mockConfig: AgentConfig = {
   START_BANKROLL: 10000,
   DRAWDOWN_FLOOR_PCT: 0.30,
   MIN_SIZE_USDC: 50,
-  PREDATOR_ENABLED: false
+  PREDATOR_ENABLED: false,
+  MAX_DAILY_LOSS_USDC: 2000
 };
 
 describe('Risk engine calculations', () => {
@@ -28,6 +29,12 @@ describe('Risk engine calculations', () => {
     // b = 2.0 (2-to-1 payout)
     expect(kellyFraction(0.40, 2.0)).toBeCloseTo(0.1, 5); // (0.4 * 3 - 1) / 2 = 0.1
     expect(kellyFraction(0.30, 2.0)).toBe(0); // negative clamped to 0
+
+    // edge cases
+    expect(kellyFraction(NaN, 1.0)).toBe(0);
+    expect(kellyFraction(-0.5, 1.0)).toBe(0);
+    expect(kellyFraction(0.5, 0)).toBe(0);
+    expect(kellyFraction(0.5, -2)).toBe(0);
   });
 
   // Parameterized tests for size monotonicity with bankroll

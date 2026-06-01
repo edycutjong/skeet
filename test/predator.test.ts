@@ -66,4 +66,24 @@ describe('MeanReversion Predator module tests', () => {
     // price = 100 (at mean) -> should HOLD
     expect(predator.evaluate(100, stats)).toBe('HOLD');
   });
+
+  test('ingestTrades edge cases', () => {
+    const disabledPredator = new MeanReversionPredator(false);
+    // Should return immediately if disabled
+    disabledPredator.ingestTrades([{ timestamp: 1, token_address: '0x1', tx_from: '0xAgent', is_buy: 1, amount_in: '1', amount_out: '1', price: '1', tx_hash: 'h1' }]);
+    expect(disabledPredator.getHostedAgentsCount()).toBe(0);
+
+    // Should return if trades list is null, undefined, or empty
+    predator.ingestTrades(null as any);
+    predator.ingestTrades(undefined as any);
+    predator.ingestTrades([]);
+    expect(predator.getHostedAgentsCount()).toBe(0);
+
+    // Should ignore trade if tx_from is missing
+    const invalidTrades: TradeEvent[] = [
+      { timestamp: 1, token_address: '0x1', tx_from: '', is_buy: 1, amount_in: '1', amount_out: '1', price: '1', tx_hash: 'h1' }
+    ];
+    predator.ingestTrades(invalidTrades);
+    expect(predator.getHostedAgentsCount()).toBe(0);
+  });
 });
