@@ -3,7 +3,7 @@
   <h1>🎯 Skeet — PVP Trading Agent</h1>
   <p><em>Skeet is a fully autonomous trading agent built specifically for Creatorbid's <strong>BID Protocol "Beat the House"</strong> PvP trading competition.</em></p>
   
-  <img src="docs/assets/readme-hero.png" alt="Skeet Hero" width="100%">
+  <img src="docs/readme-hero.png" alt="Skeet Hero" width="100%">
   <br/>
   <br/>
 
