@@ -10,7 +10,8 @@ export function decide(
   ctx: GameContext,
   stats: Signals,
   config: AgentConfig,
-  winRate: number = 0.55 // default win rate if no database history exists yet
+  winRate: number = 0.55, // default win rate if no database history exists yet
+  predatorAction?: "BUY" | "SELL" | "HOLD"
 ): Action {
   const { phase, t, price, position, entryPrice, bankroll, peakBankroll } = ctx;
 
@@ -38,7 +39,20 @@ export function decide(
       }
     }
 
-    // Entry window: look for breakout when no open position
+    // Predator-override logic: if enabled, predator triggers override momentum checks
+    if (config.PREDATOR_ENABLED && predatorAction && predatorAction !== "HOLD") {
+      if (position <= 0 && predatorAction === "BUY" && t < config.ENTRY_DEADLINE_S) {
+        const size = kellySize(winRate, bankroll, peakBankroll, config);
+        if (size > config.MIN_SIZE_USDC) {
+          return { type: "BUY", amount: Math.min(size, config.MAX_BUYIN_USDC) };
+        }
+      }
+      if (position > 0 && predatorAction === "SELL") {
+        return { type: "SELL_ALL" };
+      }
+    }
+
+    // Standard momentum breakout entry window: look for breakout when no open position
     if (position <= 0 && t < config.ENTRY_DEADLINE_S) {
       const emaFast = stats.getEmaFast();
       const emaSlow = stats.getEmaSlow();
@@ -68,3 +82,4 @@ export function decide(
   // Default behavior is to hold
   return { type: "HOLD" };
 }
+

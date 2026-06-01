@@ -114,3 +114,9 @@ export function getRounds(db: Database.Database): RoundRow[] {
 export function getTicks(db: Database.Database, gameId: string): TickRow[] {
   return db.prepare('SELECT * FROM ticks WHERE game_id = ? ORDER BY t ASC').all(gameId) as TickRow[];
 }
+
+export function getDailyPnL(db: Database.Database, sinceTimestamp: number): number {
+  const row = db.prepare('SELECT SUM(pnl_usdc) as total_pnl FROM rounds WHERE ts >= ?').get(sinceTimestamp) as { total_pnl: number | null };
+  return row?.total_pnl || 0;
+}
+

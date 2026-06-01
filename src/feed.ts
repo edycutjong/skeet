@@ -2,9 +2,10 @@ import { ethers } from 'ethers';
 import { Executor, AgentState } from './executor.js';
 import { Signals } from './signals.js';
 import { decide } from './decide.js';
-import { getDb, saveRound, saveTick, RoundRow } from './db.js';
+import { getDb, saveRound, saveTick, getDailyPnL, RoundRow } from './db.js';
 import { AgentConfig, GameContext } from './types.js';
 import fs from 'fs';
+import { MeanReversionPredator } from '../predator/predator.js';
 
 const USDC_ADDRESS = '0xed38c197b319fdc067f4c3fb58eec1a733a36cf4';
 const ERC20_ABI = [
@@ -37,17 +38,20 @@ export async function runFeed(
   startHeartbeat(state.address);
 
   // Refill helper
-  const checkAndRefill = async (address: string, safeAddress: string) => {
+  const checkAndRefill = async (address: string) => {
     try {
       const ethBal = await provider.getBalance(address);
-      const usdcBal = await usdcContract.balanceOf(safeAddress);
       
-      // If ETH is low (< 0.1 ETH) or USDC is low (< 5,000 USDC)
-      if (ethBal < ethers.parseEther('0.1') || usdcBal < ethers.parseUnits('5000', 18)) {
-        console.log(`[FEED] Balance low (ETH: ${ethers.formatEther(ethBal)}, USDC: ${ethers.formatUnits(usdcBal, 18)}). Requesting refill...`);
+      // If ETH is low (< 0.1 ETH)
+      if (ethBal < ethers.parseEther('0.1')) {
+        console.log(`[FEED] Balance low (ETH: ${ethers.formatEther(ethBal)}). Requesting refill...`);
+        const token = await executor.getFreshJwt();
         const res = await fetch('https://alpha.creator.bid/api/agents/refill', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ address })
         });
         if (res.ok) {
@@ -62,6 +66,7 @@ export async function runFeed(
     }
   };
 
+
   let lastTokenAddress = '';
   let signals: Signals | null = null;
   let entryPrice = 0;
@@ -70,6 +75,8 @@ export async function runFeed(
   let tradingApproved = false;
   let tradeInFlight = false;
   let initialBankrollCalculated = false;
+  let predator = new MeanReversionPredator(config.PREDATOR_ENABLED);
+
 
   console.log('[FEED] Starting game loop...');
 
@@ -87,9 +94,9 @@ export async function runFeed(
 
     // Determine current phase based on game status
     let phase: "LOBBY" | "MARKET_MAKING" | "TRADING" | "ENDED" = "LOBBY";
-    if (game.status === 'marketmaking' || game.mmOpen) {
+    if (game.status === 'marketmaking') {
       phase = "MARKET_MAKING";
-    } else if (game.status === 'live' || game.tradingOpen) {
+    } else if (game.status === 'live') {
       phase = "TRADING";
     } else if (game.status === 'ended') {
       phase = "ENDED";
@@ -114,9 +121,11 @@ export async function runFeed(
       tradingApproved = false;
       initialBankrollCalculated = false;
       currentRoundId = `${tokenAddress}_${game.startAt}`;
+      predator = new MeanReversionPredator(config.PREDATOR_ENABLED);
 
       // Refill checks at start of battle
-      await checkAndRefill(state.address, state.tradingSafe);
+      await checkAndRefill(state.address);
+
 
       // Approve battle token
       try {
@@ -155,11 +164,15 @@ export async function runFeed(
       signals.setReferencePrice(price);
     }
 
-    // Get balances
+    // Get balances (Sum trading Safe + treasury Safe USDC for total bankroll)
+    let tradingUsdc = 0n;
+    let treasuryUsdc = 0n;
     let usdcBal = 0n;
     let tokBal = 0n;
     try {
-      usdcBal = await usdcContract.balanceOf(state.tradingSafe);
+      tradingUsdc = await usdcContract.balanceOf(state.tradingSafe);
+      treasuryUsdc = await usdcContract.balanceOf(state.treasurySafe);
+      usdcBal = tradingUsdc + treasuryUsdc;
       tokBal = await new ethers.Contract(tokenAddress, ERC20_ABI, provider).balanceOf(state.tradingSafe);
     } catch (e: any) {
       // fallback if provider call fails
@@ -202,8 +215,49 @@ export async function runFeed(
       entryPrice
     };
 
+    // Ingest trades if predator is enabled
+    if (config.PREDATOR_ENABLED) {
+      try {
+        const resTrades = await fetch(`https://alpha.creator.bid/api/tokens/${tokenAddress}/trades`);
+        if (resTrades.ok) {
+          const tradesData = await resTrades.json();
+          const tradesArray = Array.isArray(tradesData) ? tradesData : (tradesData.trades || []);
+          const mappedTrades = tradesArray.map((t: any) => ({
+            timestamp: t.ts,
+            token_address: tokenAddress,
+            tx_from: t.txFrom || t.tx_from,
+            is_buy: t.side === 'buy' ? 1 : (t.is_buy || 0),
+            amount_in: String(t.amountBid || ''),
+            amount_out: String(t.amountToken || ''),
+            price: String(t.priceBid || ''),
+            tx_hash: t.tx || t.tx_hash
+          }));
+          predator.ingestTrades(mappedTrades);
+        }
+      } catch (e: any) {
+        console.error('[FEED] Failed to fetch trades for predator:', e.message);
+      }
+    }
+
+    const predatorAction = config.PREDATOR_ENABLED 
+      ? predator.evaluate(price, signals) 
+      : 'HOLD';
+
     // Make trading decision
-    const action = decide(ctx, signals, config);
+    const action = decide(ctx, signals, config, 0.55, predatorAction);
+
+    console.log(`[FEED] Tick t=${t.toFixed(1)} | Price: ${price.toFixed(4)} | Safe: ${parseFloat(ethers.formatUnits(tradingUsdc, 18)).toFixed(2)} USDC | Treasury: ${parseFloat(ethers.formatUnits(treasuryUsdc, 18)).toFixed(2)} USDC | Bankroll: ${currentBankroll.toFixed(2)} USDC | Action: ${action.type}`);
+
+    // Circuit Breaker check: calculate PnL over the last 24 hours
+    const sinceTimestamp = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+    const dailyPnL = getDailyPnL(db, sinceTimestamp);
+    if (dailyPnL <= -config.MAX_DAILY_LOSS_USDC) {
+      if (action.type === "BUY") {
+        console.warn(`[CIRCUIT BREAKER] BUY blocked: 24h loss of ${dailyPnL.toFixed(2)} USDC exceeds limit of -${config.MAX_DAILY_LOSS_USDC} USDC`);
+        action.type = "HOLD";
+        action.amount = 0;
+      }
+    }
 
     // Save tick to DB
     saveTick(db, {
@@ -248,10 +302,10 @@ export async function runFeed(
 
             saveRound(db, {
               game_id: currentRoundId,
-              ref_price: signals?.getReferencePrice() || 0,
-              realized_vol: signals?.getRealizedVol() || 0,
+              ref_price: signals!.getReferencePrice(),
+              realized_vol: signals!.getRealizedVol(),
               entered: 1,
-              buy_usdc: action.amount || 0,
+              buy_usdc: action.amount!,
               exit_t: t,
               pnl_usdc: pnl,
               bankroll_after: currentBankroll,

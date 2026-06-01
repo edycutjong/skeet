@@ -37,4 +37,5 @@ export interface AgentConfig {
   DRAWDOWN_FLOOR_PCT: number;
   MIN_SIZE_USDC: number;
   PREDATOR_ENABLED: boolean;
+  MAX_DAILY_LOSS_USDC: number;
 }
