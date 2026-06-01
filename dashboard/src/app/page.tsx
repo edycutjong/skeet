@@ -5,8 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine 
 } from 'recharts';
 import { 
-  TrendingUp, Play, ShieldAlert, Cpu, AlertTriangle, 
-  Layers, RefreshCw, BarChart2, CheckCircle2, XCircle
+  TrendingUp, Cpu, RefreshCw
 } from 'lucide-react';
 
 interface Round {
@@ -67,9 +66,7 @@ export default function Dashboard() {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [ticks, setTicks] = useState<Tick[]>([]);
   const [selectedRoundId, setSelectedRoundId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
   const [usingMock, setUsingMock] = useState(false);
-  const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'HISTORY'>('TELEMETRY');
 
   const fetchData = async () => {
     try {
@@ -92,15 +89,18 @@ export default function Dashboard() {
       setTicks(mockTicks);
       setSelectedRoundId(mockRounds[0].game_id);
       setUsingMock(true);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    const timeout = setTimeout(() => {
+      fetchData();
+    }, 0);
     const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, []);
 
   const totalPnL = rounds.reduce((sum, r) => sum + r.pnl_usdc, 0);
@@ -113,7 +113,7 @@ export default function Dashboard() {
   const cumulativeData = rounds
     .slice()
     .reverse()
-    .reduce((acc: any[], round, idx) => {
+    .reduce((acc: { name: string; Skeet: number; MeanReversion: number }[], round, idx) => {
       const prevSkeet = idx === 0 ? 0 : acc[idx - 1].Skeet;
       const prevMR = idx === 0 ? 0 : acc[idx - 1].MeanReversion;
       

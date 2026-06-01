@@ -33,10 +33,10 @@ export async function GET() {
       ticks,
       connected: true
     });
-  } catch (e: any) {
+  } catch (e) {
     if (db) db.close();
     return NextResponse.json({
-      error: e.message,
+      error: e instanceof Error ? e.message : String(e),
       rounds: [],
       ticks: [],
       connected: false
