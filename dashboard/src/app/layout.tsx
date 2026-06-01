@@ -21,6 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://skeet-dashboard.vercel.app'),
   title: 'Skeet — PvP Trading Agent Console',
   description: 'Fully autonomous PvP momentum trading agent and real-time telemetry console for BID Protocol.',
   icons: {
