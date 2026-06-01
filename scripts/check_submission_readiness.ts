@@ -3,7 +3,7 @@ import path from 'path';
 
 const FILES_TO_CHECK = [
   'README.md',
-  'DEMO.md',
+  'docs/DEMO.md',
   'src/index.ts',
   'src/config.json',
   'src/db.ts',

@@ -13,7 +13,8 @@ const config: AgentConfig = {
   START_BANKROLL: 10000,
   DRAWDOWN_FLOOR_PCT: 0.30,
   MIN_SIZE_USDC: 50,
-  PREDATOR_ENABLED: false
+  PREDATOR_ENABLED: false,
+  MAX_DAILY_LOSS_USDC: 2000
 };
 
 // Simulated MeanReversion bot logic
