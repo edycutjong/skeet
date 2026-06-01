@@ -14,14 +14,14 @@
 
   <br/>
 
-  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-  ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-  ![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=next.js)
-  ![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-  ![Tailwind](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)
-  ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
-  ![Ethers.js](https://img.shields.io/badge/Ethers.js_v6-2735C4?style=for-the-badge&logo=ethereum&logoColor=white)
-  ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=badge&logo=typescript&logoColor=white)
+  ![Node.js](https://img.shields.io/badge/Node.js-339933?style=badge&logo=nodedotjs&logoColor=white)
+  ![Next.js](https://img.shields.io/badge/Next.js_16-black?style=badge&logo=next.js)
+  ![React](https://img.shields.io/badge/React_19-61DAFB?style=badge&logo=react&logoColor=black)
+  ![Tailwind](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=badge&logo=tailwindcss&logoColor=white)
+  ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=badge&logo=sqlite&logoColor=white)
+  ![Ethers.js](https://img.shields.io/badge/Ethers.js_v6-2735C4?style=badge&logo=ethereum&logoColor=white)
+  ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=badge&logo=vitest&logoColor=white)
   [![Skeet CI](https://github.com/edycutjong/skeet/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/skeet/actions/workflows/ci.yml)
 </div>
 
@@ -70,7 +70,7 @@ flowchart TD
 ```
 
 ### 🚀 Performance Benchmarks & Testing
-* **Vitest Suite**: 119 unit tests passing (>95% statement coverage on core files).
+* **Vitest Suite**: 150 unit tests passing (>95% statement coverage on core files).
 * **Latency**: Running `npm run bench` over 1,000 mock tick evaluations returns a **Median (p50)** evaluation latency of **0.0005 ms** (Max: 0.0636 ms).
 
 ## 🏆 Sponsor Tracks Targeted
