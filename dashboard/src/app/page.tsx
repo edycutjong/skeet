@@ -57,8 +57,8 @@ const mockTicks: Tick[] = Array.from({ length: 120 }, (_, i) => {
     reserves_usdc: 50000 + Math.sin(t * 0.1) * 2000,
     ema_fast: price * 1.01,
     ema_slow: price * 0.99,
-    action: t === 35 ? 'BUY' : t === 118 ? 'SELL_ALL' : 'HOLD',
-    size: t === 35 ? 750 : 0
+    action: t === 36 ? 'BUY' : t === 117 ? 'SELL_ALL' : 'HOLD',
+    size: t === 36 ? 750 : 0
   };
 });
 
@@ -164,6 +164,7 @@ export default function Dashboard() {
           </div>
           <button 
             onClick={fetchData}
+            aria-label="Refresh Data"
             className="p-2 border border-border-bright hover:border-cyan text-text-secondary hover:text-cyan rounded-lg transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
