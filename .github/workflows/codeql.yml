@@ -1,10 +1,13 @@
 name: "CodeQL"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # Temporarily set to manual trigger while the repo is private (CodeQL requires public repo or GitHub Advanced Security)
+  # When you make the repo public, uncomment the push/pull_request triggers below.
+  workflow_dispatch:
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
 
 jobs:
   analyze:
