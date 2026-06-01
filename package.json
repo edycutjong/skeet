@@ -11,6 +11,7 @@
     "backtest": "tsx scripts/backtest.ts",
     "verify-offline": "tsx scripts/verify_offline.ts",
     "check-readiness": "tsx scripts/check_submission_readiness.ts",
+    "lighthouse": "lhci autorun",
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" || echo 'Prettier not run'",
     "lint": "npm run format:check && npm run lint --prefix dashboard",
@@ -23,6 +24,7 @@
     "ethers": "^6.13.0"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.60.0",
     "@types/better-sqlite3": "^7.6.10",
     "@types/node": "^20.14.2",
