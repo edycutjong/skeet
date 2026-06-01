@@ -57,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${orbitron.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${orbitron.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="antialiased scanlines relative min-h-screen">
         {children}
       </body>
