@@ -1,8 +1,10 @@
 node_modules/
 dist/
 .env
-*.sqlite
+*.sqlite*
 .agent.json
 ACCESS.md
 .DS_Store
 coverage/
+docs/assets
+.next/
