@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.sqlite*
+.agent.json
+ACCESS.md
+.DS_Store
+coverage/
+docs/assets
+.next/
+test-results/

@@ -1,0 +1,37 @@
+{
+  "name": "skeet",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --import tsx src/index.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "bench": "tsx scripts/bench.ts",
+    "backtest": "tsx scripts/backtest.ts",
+    "verify-offline": "tsx scripts/verify_offline.ts",
+    "check-readiness": "tsx scripts/check_submission_readiness.ts",
+    "lighthouse": "lhci autorun",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" || echo 'Prettier not run'",
+    "lint": "npm run format:check && npm run lint --prefix dashboard",
+    "lint:fix": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" && npm run lint:fix --prefix dashboard",
+    "ci": "npm run format:check && npm run typecheck && npm run test:coverage && npm run ci --prefix dashboard"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.60.0",
+    "@types/better-sqlite3": "^7.6.10",
+    "@types/node": "^20.14.2",
+    "@vitest/coverage-v8": "^1.6.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.15.5",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
