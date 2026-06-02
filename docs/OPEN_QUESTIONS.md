@@ -33,9 +33,9 @@ Mod Albert confirmed (~01:53 onward): **"Yes they are, we are rolling out some c
 - **If treasury → trading transfer is allowed** → implement the "Optional Enhancement" in `FIX_SPEC_FUNDING.md` to top up and bet bigger (much easier to out-earn the house).
 - **If not allowed** → ~100/game is the hard ceiling; the Primary Fix is the whole fix.
 
-**Answer:** _(paste here when received)_
+**Answer (Mod, 2026-06-02 11:05):** **"Is auto funded from the treasury."** ✅ Confirms the on-chain finding (Q3): settlement auto-refills the trading Safe from treasury.
 
----
+**⚠️ UNRESOLVED NUANCE — test on resume:** "auto-funded" could mean either (a) the trading Safe is **reset to ~100/round** (fixed deployable cap), OR (b) a buy-in **draws from treasury on demand up to 1,000** (so you could bet 10× bigger). The on-chain evidence (settlement transfers exactly 100; pre-clamp buys of ~500 FAILED, ~98 buys SUCCEEDED) points to **(a) — capped at ~the trading-Safe balance at buy time**. **Definitive test when battles resume:** temporarily raise the deployable clamp and attempt a buy > current trading-Safe balance. If it executes → (b), remove the clamp for much bigger PnL. If it reverts → (a), ~100/round is the ceiling and the dissolution pivot (payout can exceed buy-in) is the path to high per-battle PnL.
 
 ---
 
