@@ -66,8 +66,7 @@ export function decide(
         stats.getTickCount() >= warmupTicks
       ) {
         const size = kellySize(winRate, bankroll, peakBankroll, config);
-        const deployable =
-          ctx.deployable !== undefined ? ctx.deployable : Infinity;
+        const deployable = ctx.deployable !== undefined ? ctx.deployable : 0;
         const amount = Math.min(size, config.MAX_BUYIN_USDC, deployable);
         if (amount >= config.MIN_SIZE_USDC) {
           return { type: "BUY", amount };
@@ -95,8 +94,7 @@ export function decide(
 
       if (breakout) {
         const size = kellySize(winRate, bankroll, peakBankroll, config);
-        const deployable =
-          ctx.deployable !== undefined ? ctx.deployable : Infinity;
+        const deployable = ctx.deployable !== undefined ? ctx.deployable : 0;
         const amount = Math.min(size, config.MAX_BUYIN_USDC, deployable);
         if (amount >= config.MIN_SIZE_USDC) {
           return { type: "BUY", amount };
@@ -136,7 +134,7 @@ function decideDissolution(
   // 2. Late window: accumulate ONLY if the token has crashed (cheap tokens, herd has dumped)
   //    and the pool still holds a meaningful USDC reserve worth claiming.
   if (position <= 0 && drawdown <= crashPct && reserves > cap) {
-    const deployable = ctx.deployable !== undefined ? ctx.deployable : Infinity;
+    const deployable = ctx.deployable !== undefined ? ctx.deployable : 0;
     const amount = Math.min(cap, deployable);
     if (amount >= (config.MIN_SIZE_USDC ?? 50)) {
       return { type: "BUY", amount };

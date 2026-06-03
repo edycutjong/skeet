@@ -104,6 +104,7 @@ describe("Core decide state machine tests", () => {
       entryPrice: 0,
       bankroll: 10000,
       peakBankroll: 10000,
+      deployable: 10000,
     };
 
     // Setup stats for breakout: Fast EMA > Slow EMA, Price > RefPrice, Volume rising
@@ -212,6 +213,7 @@ describe("Core decide state machine tests", () => {
       entryPrice: 0,
       bankroll: 10000,
       peakBankroll: 10000,
+      deployable: 10000,
     };
 
     // 1. Predator action = BUY -> should BUY if t < entry deadline and size > min
@@ -321,6 +323,31 @@ describe("Core decide state machine tests", () => {
 
     const action = decide(ctx, stats, mockConfig, 0.6);
     expect(action.type).toBe("HOLD"); // skipped because 30 < 50
+  });
+
+  test("deployable undefined under momentum breakout -> fail closed and HOLD", () => {
+    const ctx: GameContext = {
+      phase: "TRADING",
+      t: 20,
+      price: 110,
+      reserves: 50000,
+      position: 0,
+      entryPrice: 0,
+      bankroll: 10000,
+      peakBankroll: 10000,
+      deployable: undefined, // undefined -> fail closed to 0
+    };
+
+    // Setup breakout conditions with warmup
+    stats.setReferencePrice(100);
+    stats.update(100); // 1 discarded
+    for (let i = 0; i < 7; i++) {
+      stats.update(100); // 2 to 8 (warmed up)
+    }
+    stats.update(110); // 9 (breakout)
+
+    const action = decide(ctx, stats, mockConfig, 0.6);
+    expect(action.type).toBe("HOLD"); // fail-closed to 0 < MIN_SIZE_USDC
   });
 
   test("deployable above Kelly -> Kelly wins", () => {
@@ -461,6 +488,7 @@ describe("Core decide state machine tests", () => {
       entryPrice: 0,
       bankroll: 10000,
       peakBankroll: 10000,
+      deployable: 10000,
     };
 
     stats.setReferencePrice(100);
@@ -492,6 +520,7 @@ describe("Core decide state machine tests", () => {
       entryPrice: 0,
       bankroll: 10000,
       peakBankroll: 10000,
+      deployable: 10000,
     };
 
     stats.setReferencePrice(100);
@@ -571,6 +600,33 @@ describe("Core decide state machine tests", () => {
     expect(action.amount).toBe(200); // capped at DISSO_MAX_BUYIN_USDC
   });
 
+  test("Dissolution mode with deployable undefined -> fail closed and HOLD", () => {
+    const dissoConfig: AgentConfig = {
+      ...mockConfig,
+      STRATEGY_MODE: "dissolution",
+      DISSO_ACCUMULATE_T: 150,
+      DISSO_MIN_CRASH_PCT: -0.4,
+      DISSO_MAX_BUYIN_USDC: 200,
+    };
+
+    const ctx: GameContext = {
+      phase: "TRADING",
+      t: 150, // t >= accumT
+      price: 50, // crashed 50% from ref (100)
+      reserves: 1000, // reserves > cap (200)
+      position: 0,
+      entryPrice: 0,
+      bankroll: 10000,
+      peakBankroll: 10000,
+      deployable: undefined, // undefined -> fail closed to 0
+    };
+
+    stats.setReferencePrice(100);
+
+    const action = decide(ctx, stats, dissoConfig);
+    expect(action.type).toBe("HOLD"); // fail-closed to 0 < MIN_SIZE_USDC
+  });
+
   test("Dissolution mode shallow drop hold", () => {
     const dissoConfig: AgentConfig = {
       ...mockConfig,
@@ -627,6 +683,46 @@ describe("Core decide state machine tests", () => {
     expect(action.type).toBe("HOLD");
   });
 
+  test("Dissolution mode does NOT force-exit at/after EXIT_DEADLINE_S (holds through)", () => {
+    const cfg = { ...mockConfig, STRATEGY_MODE: "dissolution" } as AgentConfig;
+    const ctx: GameContext = {
+      phase: "TRADING",
+      t: cfg.EXIT_DEADLINE_S + 10,      // past the momentum-mode exit deadline
+      price: 50,
+      reserves: 5000,
+      position: 500,                    // holding tokens
+      entryPrice: 0,
+      bankroll: 10000,
+      peakBankroll: 10000,
+      deployable: 10000,
+    };
+    const action = decide(ctx, stats, cfg);
+    expect(action.type).toBe("HOLD");   // must NOT be SELL_ALL
+  });
+
+  test("Dissolution accumulates on crash only when a reference price is seeded", () => {
+    const cfg = { ...mockConfig, STRATEGY_MODE: "dissolution" } as AgentConfig;
+    const ctx: GameContext = {
+      phase: "TRADING",
+      t: (cfg.DISSO_ACCUMULATE_T ?? 150) + 5,
+      price: 50,
+      reserves: 5000,
+      position: 0,
+      entryPrice: 0,
+      bankroll: 10000,
+      peakBankroll: 10000,
+      deployable: 10000,
+    };
+
+    // ref unseeded (0) -> drawdown forced to 0 -> NO buy
+    stats.setReferencePrice(0);
+    expect(decide(ctx, stats, cfg).type).toBe("HOLD");
+
+    // ref seeded at the open (100), price crashed -50% -> BUY
+    stats.setReferencePrice(100);
+    expect(decide(ctx, stats, cfg).type).toBe("BUY");
+  });
+
   test("Momentum mode with custom ENTRY_MIN_T and EMA_MARGIN", () => {
     const customConfig: AgentConfig = {
       ...mockConfig,
@@ -680,6 +776,7 @@ describe("Core decide state machine tests", () => {
       entryPrice: 0,
       bankroll: 10000,
       peakBankroll: 10000,
+      deployable: 10000,
     };
 
     // Test 1: ref <= 0 (drawdown = 0, so drawdown (0) is > default crashPct (-0.40)) -> should HOLD

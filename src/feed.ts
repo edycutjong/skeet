@@ -173,9 +173,14 @@ export async function runFeed(
     const price = game.token.currentPrice || 0;
     signals.update(price);
 
-    // Update reference price at MM end
+    // Seed reference price: prefer the MM phase; fall back to the first TRADING tick
+    // of the battle (the open) now that the market-making phase has been removed.
     if (phase === "MARKET_MAKING") {
       signals.setReferencePrice(price);
+      console.log("[FEED] ref seeded", signals.getReferencePrice());
+    } else if (phase === "TRADING" && signals.getReferencePrice() === 0 && price > 0) {
+      signals.setReferencePrice(price);
+      console.log("[FEED] ref seeded", signals.getReferencePrice());
     }
 
     // Get balances (Sum trading Safe + treasury Safe USDC for total bankroll)

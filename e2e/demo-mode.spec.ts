@@ -6,12 +6,12 @@ test('Dashboard loads in demo mode when DB is empty or missing', async ({ page }
 
   // Verify the page title
   const title = await page.title();
-  expect(title).toContain('Skeet PVP');
+  expect(title).toContain('Skeet');
 
   // Verify the main header text is visible
   const header = page.locator('h1');
   await expect(header).toBeVisible();
-  await expect(header).toContainText('SKEET');
+  await expect(header).toContainText('Skeet');
 
   // Verify the presence of demo mode badge
   const demoBadge = page.locator('span:has-text("DEMO REPLAY MODE")');

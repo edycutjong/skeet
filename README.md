@@ -33,11 +33,11 @@
 
 ## 💡 The Problem & Solution
 In PvP trading competitions, speed, precise timing, and risk management are critical, and human execution is too slow to compete at the edge. 
-**Skeet** solves this by autonomously front-running liquidity dissolutions and continuously optimizing trade execution.
+**Skeet** solves this by reading the on-chain game clock and capturing the dissolution reserve split that naive momentum bots miss.
 
 **Key Features:**
-- ⚡ **Autonomous Execution:** State machine handles WATCH ➔ TRADE ➔ EXIT transitions seamlessly.
-- 🔒 **Protocol-Native Edge:** Synchronizes natively with BID Protocol's clock to execute precisely at second `162s` to bypass AMM liquidation slippage.
+- ⚡ **Autonomous Execution:** State machine handles WATCH ➔ TRADE ➔ EXIT/HOLD transitions seamlessly.
+- 🔒 **Protocol-Native Edge:** Synchronizes natively with BID Protocol's clock to execute precise actions according to the selected strategy mode.
 - 🎨 **Real-Time Telemetry:** Dashboard UI to monitor real-time PnL and active round execution charts.
 - 🛡️ **Budget Guards:** Sizing fractions are calculated natively against the EOA/Safe balances on chain `42069`.
 
