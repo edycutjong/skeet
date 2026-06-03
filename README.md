@@ -69,7 +69,7 @@ flowchart TD
 ```
 
 ### 🚀 Performance Benchmarks & Testing
-* **Vitest Suite**: 171 unit tests passing (159 daemon tests + 12 dashboard tests, with 100% statement, branch, function, and line coverage).
+* **Vitest Suite**: 185 tests passing (173 daemon tests + 12 dashboard tests, with 100% statement coverage on the core decision engine).
 * **Latency**: Running `npm run bench` over 1,000 mock tick evaluations returns a **Median (p50)** evaluation latency of **0.0005 ms** (Max: 0.0636 ms).
 
 ## 🏆 Sponsor Tracks Targeted
