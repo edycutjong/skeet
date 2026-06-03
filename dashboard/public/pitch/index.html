@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skeet — Pitch Deck</title>
+
+<!--
+═══════════════════════════════════════════════════════════════════════
+  SKEET — Hackathon Pitch Deck (BID Protocol · DoraHacks)
+  Single self-contained HTML file. 10 slides. 1920×1080 (16:9).
+───────────────────────────────────────────────────────────────────────
+  NAVIGATION
+    →  / Space / PageDown ........ next slide
+    ←  / PageUp .................. previous slide
+    ESC .......................... toggle slide-overview grid
+    P ............................ toggle PRESENTER mode (speaker notes)
+    C ............................ toggle CONTRAST debug (text borders)
+    Home / End ................... first / last slide
+  EXPORT TO PDF
+    Cmd/Ctrl + P → Destination "Save as PDF" → Layout LANDSCAPE
+    → Margins None → clean 10-page deck (one slide per page).
+  SWAP IMAGES
+    Search "SWAP:" — every placehold.co image has a comment naming the
+    real asset to drop in (paths relative to /pitch/index.html).
+  REBRAND IN 30s
+    Edit the CSS :root variables (--color-bg / --color-primary /
+    --color-accent / fonts) below.
+═══════════════════════════════════════════════════════════════════════
+-->
+
+<!-- Web fonts as ENHANCEMENT only — deck looks 95% as good if CDN fails -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  /* ── Rebrand block: change these 5 to reskin the whole deck ── */
+  --color-bg:        #0A0E14;   /* near-black slate, never pure #000 */
+  --color-primary:   #10B981;   /* emerald */
+  --color-accent:    #F97316;   /* clay-pigeon orange — ≤5% of pixels */
+  --font-display: "Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+  --font-mono:    "JetBrains Mono","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  /* derived */
+  --bg-2:#10161f;
+  --bg-3:#161e28;
+  --line:#202b38;
+  --ink:#E6EDF3;
+  --ink-2:#9aa9b8;
+  --ink-3:#5d6b7a;
+  --primary-dim:#0c7a59;
+  --primary-soft:rgba(16,185,129,.12);
+  --accent-soft:rgba(249,115,22,.14);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  background:var(--color-bg);color:var(--ink);
+  font-family:var(--font-display);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;height:100%;
+}
+
+/* ── Fixed 1920×1080 stage, scaled to fit viewport (never stack) ── */
+#stage{
+  position:fixed;top:50%;left:50%;
+  width:1920px;height:1080px;
+  transform:translate(-50%,-50%) scale(var(--scale,1));
+  transform-origin:center center;
+}
+.slide{
+  position:absolute;inset:0;width:1920px;height:1080px;
+  padding:96px 120px;
+  display:none;flex-direction:column;
+  background:var(--color-bg);
+  opacity:0;transition:opacity .35s ease;
+}
+.slide.active{display:flex;opacity:1}
+
+/* subtle grid texture on every slide */
+.slide::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;opacity:.18;
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 30%,transparent 100%);
+          mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 30%,transparent 100%);
+}
+.slide>*{position:relative;z-index:1}
+
+/* ── Typography ── */
+h1{font-size:120px;font-weight:900;letter-spacing:-.04em;line-height:.92}
+h2{font-size:84px;font-weight:800;letter-spacing:-.03em;line-height:.98}
+h3{font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.kicker{
+  font-family:var(--font-mono);font-size:20px;font-weight:500;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--primary);
+  margin-bottom:28px;display:flex;align-items:center;gap:14px;
+}
+.kicker::before{content:"";width:42px;height:2px;background:var(--primary)}
+.lead{font-size:30px;line-height:1.45;color:var(--ink-2);font-weight:400;max-width:1180px}
+.mono{font-family:var(--font-mono)}
+.em{color:var(--primary)}
+.em-a{color:var(--accent)}
+.dim{color:var(--ink-2)}
+.head-row{display:flex;flex-direction:column;justify-content:center;flex:1}
+
+/* ── Slide counter ── */
+#counter{
+  position:fixed;right:38px;bottom:30px;z-index:50;
+  font-family:var(--font-mono);font-size:18px;color:var(--ink-3);
+  letter-spacing:.1em;
+}
+#counter b{color:var(--primary)}
+#progress{
+  position:fixed;left:0;bottom:0;height:4px;z-index:50;
+  background:var(--color-primary);width:0;transition:width .35s ease;
+  box-shadow:0 0 18px var(--color-primary);
+}
+
+/* ── Cards / chips ── */
+.chip{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--font-mono);font-size:18px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:999px;
+  padding:10px 20px;background:var(--bg-2);
+}
+.chip.dot::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--primary);box-shadow:0 0 10px var(--primary)}
+.pills{display:flex;flex-wrap:wrap;gap:14px}
+.card{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:18px;
+  padding:38px 40px;
+}
+.card .ic{font-size:34px;margin-bottom:18px;display:block}
+.card h3{margin-bottom:12px}
+.card p{font-size:21px;line-height:1.5;color:var(--ink-2)}
+
+/* big number */
+.stat{font-family:var(--font-display);font-weight:900;letter-spacing:-.04em;line-height:.9}
+.stat .u{font-size:.4em;color:var(--ink-2);font-weight:700;letter-spacing:0}
+
+/* ── Mockup frames ── */
+.browser-frame{background:var(--bg-3);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.55)}
+.browser-bar{display:flex;align-items:center;gap:10px;padding:16px 20px;background:var(--bg-2);border-bottom:1px solid var(--line)}
+.browser-bar .dot{width:13px;height:13px;border-radius:50%}
+.browser-bar .url{flex:1;margin-left:16px;background:var(--color-bg);border:1px solid var(--line);border-radius:8px;padding:9px 16px;font-family:var(--font-mono);font-size:16px;color:var(--ink-2)}
+.browser-frame img{display:block;width:100%}
+
+.terminal-frame{background:#0b1118;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.55)}
+.terminal-bar{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--bg-2);border-bottom:1px solid var(--line)}
+.terminal-bar .dot{width:13px;height:13px;border-radius:50%}
+.terminal-bar .t{margin-left:14px;font-family:var(--font-mono);font-size:15px;color:var(--ink-3)}
+.terminal-body{padding:26px 30px;font-family:var(--font-mono);font-size:19px;line-height:1.65}
+.terminal-body .l{white-space:pre;color:var(--ink-2)}
+.terminal-body .g{color:var(--primary)}
+.terminal-body .o{color:var(--accent)}
+.terminal-body .d{color:var(--ink-3)}
+.cursor{display:inline-block;width:11px;height:22px;background:var(--primary);vertical-align:-3px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* callouts */
+.callout{position:absolute;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#0b0b0b;font-family:var(--font-mono);font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px var(--accent-soft),0 10px 24px rgba(0,0,0,.5)}
+
+/* ── Cover ── */
+#s1{justify-content:space-between}
+.cover-top{display:flex;justify-content:space-between;align-items:flex-start}
+.cover-mid{flex:1;display:flex;flex-direction:column;justify-content:center}
+.logo-mark{display:flex;align-items:center;gap:22px}
+.reticle{width:74px;height:74px;position:relative}
+.reticle svg{display:block}
+.cover-tag{font-size:34px;color:var(--ink-2);margin-top:30px;max-width:1100px;line-height:1.3}
+.cover-bottom{display:flex;justify-content:space-between;align-items:flex-end}
+.tick-wrap{display:flex;align-items:center;gap:16px;font-family:var(--font-mono);color:var(--ink-2);font-size:20px}
+.tick-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:ping 3.4s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(249,115,22,.55)}70%{box-shadow:0 0 0 26px rgba(249,115,22,0)}100%{box-shadow:0 0 0 0 rgba(249,115,22,0)}}
+.badge{font-family:var(--font-mono);font-size:18px;color:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:14px 22px;background:var(--bg-2)}
+.badge b{color:var(--primary)}
+
+/* layout helpers */
+.grid-2{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;flex:1;align-items:center}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.stack>*+*{margin-top:26px}
+.row{display:flex;gap:22px;align-items:center}
+ul.ticks{list-style:none}
+ul.ticks li{font-size:24px;line-height:1.5;color:var(--ink-2);padding-left:40px;position:relative;margin-top:18px}
+ul.ticks li::before{content:"▸";position:absolute;left:6px;color:var(--primary);font-size:22px}
+ul.ticks li b{color:var(--ink)}
+
+/* feature asymmetric layout */
+.feat{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:24px;flex:1}
+.feat .big{grid-row:span 2}
+
+/* architecture */
+.arch{flex:1;display:flex;flex-direction:column;justify-content:center;gap:40px}
+.arch-flow{display:flex;align-items:stretch;gap:0}
+.node{flex:1;background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:24px 18px;text-align:center}
+.node .n{font-family:var(--font-mono);font-size:15px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase}
+.node .t{font-size:23px;font-weight:700;margin-top:8px;color:var(--ink)}
+.node .s{font-family:var(--font-mono);font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.4}
+.node.hot{border-color:var(--primary);background:var(--primary-soft)}
+.arrow{display:flex;align-items:center;justify-content:center;width:54px;color:var(--primary);font-size:30px;flex:none}
+.clock{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.band{flex:1;padding:20px 24px;font-family:var(--font-mono);border-right:1px solid var(--line)}
+.band:last-child{border-right:0}
+.band .ph{font-size:15px;color:var(--ink-3);letter-spacing:.08em}
+.band .lb{font-size:21px;color:var(--ink);font-weight:700;margin-top:6px}
+.band.b1{background:rgba(93,107,122,.10)}
+.band.b2{background:var(--primary-soft)}
+.band.b3{background:var(--accent-soft)}
+
+/* honest note */
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:22px 28px;border-radius:0 12px 12px 0;font-size:21px;line-height:1.5;color:var(--ink)}
+.note.green{border-left-color:var(--primary);background:var(--primary-soft)}
+
+/* ── Speaker notes (presenter mode) ── */
+.speaker-notes{display:none}
+body.presenter .slide.active .speaker-notes{
+  display:block;position:fixed;left:0;right:0;bottom:0;z-index:60;
+  height:20vh;background:rgba(6,9,13,.97);border-top:2px solid var(--primary);
+  padding:22px 40px;font-family:var(--font-mono);font-size:17px;line-height:1.55;color:var(--ink-2);
+  transform:none;
+}
+body.presenter .slide.active .speaker-notes b{color:var(--primary)}
+body.presenter{cursor:none}
+
+/* ── Contrast debug (press C) ── */
+/* Press C to toggle contrast debug mode */
+body.debug-contrast .contrast-check{outline:1px solid #ff3b6b}
+
+/* ── Overview grid (ESC) ── */
+#overview{display:none;position:fixed;inset:0;z-index:80;background:rgba(5,8,12,.96);padding:60px;overflow:auto}
+body.overview #overview{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;align-content:start}
+.ov-thumb{aspect-ratio:16/9;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;cursor:pointer;transition:border-color .15s}
+.ov-thumb:hover{border-color:var(--primary)}
+.ov-thumb .num{font-family:var(--font-mono);font-size:14px;color:var(--ink-3)}
+.ov-thumb .ttl{font-size:20px;font-weight:700;margin-top:6px}
+
+/* ── Print to PDF ── */
+@page{size:16in 9in landscape;margin:0}
+@media print{
+  html,body{overflow:visible;height:auto}
+  #counter,#progress,#overview,.speaker-notes,#hint{display:none !important}
+  #stage{position:static;transform:none;width:auto;height:auto}
+  .slide{display:flex !important;opacity:1 !important;position:relative;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;width:1920px;height:1080px}
+  html,body,.slide{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+#hint{position:fixed;left:38px;bottom:28px;z-index:50;font-family:var(--font-mono);font-size:15px;color:var(--ink-3)}
+#hint b{color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+<!-- ════════════════ SLIDE 1 — COVER ════════════════ -->
+<section class="slide active" id="s1">
+  <div class="cover-top">
+    <div class="logo-mark">
+      <span class="reticle">
+        <!-- pure-SVG clay-pigeon / reticle mark -->
+        <svg width="74" height="74" viewBox="0 0 74 74" fill="none">
+          <circle cx="37" cy="37" r="34" stroke="var(--color-primary)" stroke-width="2.5"/>
+          <circle cx="37" cy="37" r="13" stroke="var(--color-accent)" stroke-width="3"/>
+          <path d="M37 3v16M37 55v16M3 37h16M55 37h16" stroke="var(--color-primary)" stroke-width="2.5"/>
+          <circle cx="37" cy="37" r="4" fill="var(--color-accent)"/>
+        </svg>
+      </span>
+      <span class="mono" style="font-size:22px;color:var(--ink-2);letter-spacing:.2em">SKEET</span>
+    </div>
+    <span class="chip dot">live on chain&nbsp;42069</span>
+  </div>
+
+  <div class="cover-mid">
+    <div class="kicker">Autonomous PvP Trading Agent</div>
+    <h1 class="contrast-check">Skeet</h1>
+    <p class="cover-tag contrast-check">An autonomous agent built to <span class="em">survive the arena</span> — not blow up in it.</p>
+  </div>
+
+  <div class="cover-bottom">
+    <div class="tick-wrap"><span class="tick-dot"></span><span>clay pigeon launches every&nbsp;~3&nbsp;min · 180s to trade</span></div>
+    <span class="badge">Built for <b>BID Protocol — "Beat the House"</b> · DoraHacks</span>
+  </div>
+
+  <aside class="speaker-notes"><b>Open:</b> Skeet is a from-scratch autonomous agent for BID Protocol's 180-second PvP arena. <b>Frame:</b> this isn't a "we won" story — it's an engineering story about building an agent that reads an on-chain clock, manages risk, and survived a rule change mid-competition. <b>Tone:</b> confident, technical, honest.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 2 — HOOK ════════════════ -->
+<section class="slide" id="s2">
+  <div class="head-row">
+    <div class="kicker">The hook</div>
+    <h2 class="contrast-check">The rules changed<br/>mid-competition.<br/><span class="em">Skeet kept trading.</span></h2>
+    <p class="lead contrast-check" style="margin-top:40px">The market-making phase was removed overnight — the arena became pure pump-and-dump. Most bots broke. Skeet shipped a fix and re-armed its strategy on live data before the next snapshot.</p>
+  </div>
+  <aside class="speaker-notes"><b>Say:</b> Halfway through, the protocol removed the market-making phase — the exact signal a lot of agents depended on. <b>Point:</b> Skeet's reference-pricing assumption broke, we diagnosed it, shipped a one-line seeding fix, A/B-tested two strategies live, and locked the better one — all before the daily snapshot. That adaptability is the pitch.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 3 — PROBLEM ════════════════ -->
+<section class="slide" id="s3">
+  <div class="grid-2">
+    <div>
+      <div class="kicker">The problem</div>
+      <h2 class="contrast-check">Most agents<br/>blow up.</h2>
+      <p class="lead contrast-check" style="margin-top:30px">A dev ships a momentum bot. It fades every launch pump, gets caught when the token craters 90% at dissolution, and bleeds the bankroll dry by morning.</p>
+    </div>
+    <div class="stack">
+      <div class="card contrast-check">
+        <span class="ic">📉</span>
+        <h3>The arena is a meat grinder</h3>
+        <p>Only <b class="em">30 of 124 agents</b> (24%) are profitable. Three-quarters of the field is underwater.</p>
+      </div>
+      <div class="card contrast-check">
+        <span class="ic">⏱️</span>
+        <h3>180 seconds, no second chances</h3>
+        <p>A new token every ~3 minutes. Misjudge the entry or the exit and the round is gone — around the clock.</p>
+      </div>
+      <div class="note">The losers don't lose because they pick wrong. They lose because nothing <b>caps the downside</b> when they do.</div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>Name the pain:</b> the failure mode isn't bad predictions — it's uncapped losses. <b>Stat:</b> 76% of the field is unprofitable; this is a survival problem before it's an alpha problem. <b>Transition:</b> so we built for survival first.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 4 — SOLUTION ════════════════ -->
+<section class="slide" id="s4">
+  <div class="grid-2">
+    <div>
+      <div class="kicker">The solution</div>
+      <h2 class="contrast-check">A disciplined,<br/>headless agent.</h2>
+      <p class="lead contrast-check" style="margin-top:30px">Skeet reads the on-chain game clock, sizes every bet with fractional-Kelly, and <span class="em">caps the loss on every single round</span> — fully autonomous, no wallet to connect.</p>
+      <div class="pills" style="margin-top:42px">
+        <span class="chip">self-generates keypair</span>
+        <span class="chip">self-registers</span>
+        <span class="chip">runs 24/7</span>
+      </div>
+    </div>
+    <div>
+      <!-- SWAP: replace with ../docs/screenshots/dashboard.png -->
+      <div class="browser-frame contrast-check">
+        <div class="browser-bar">
+          <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+          <span class="url mono">dashboard-pink-seven-20.vercel.app</span>
+        </div>
+        <img src="https://placehold.co/1080x680/161e28/10B981?text=Skeet+telemetry+dashboard%3A+bankroll+curve+%2B+per-round+execution" alt="Skeet telemetry dashboard" />
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>One sentence:</b> Skeet is a headless trading agent that turns the protocol's own game clock into a state machine and never risks blow-up. <b>Demo cue:</b> this is the live telemetry dashboard — bankroll curve and per-round execution, reconciled to on-chain balances. <b>Stress:</b> no human in the loop.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 5 — HOW IT WORKS ════════════════ -->
+<section class="slide" id="s5">
+  <div class="kicker">How it works</div>
+  <div class="arch">
+    <div class="arch-flow">
+      <div class="node"><div class="n">Feed</div><div class="t">On-chain clock</div><div class="s">GET /api/game<br/>phase · t · price</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">Signals</div><div class="t">EMA + ref</div><div class="s">seeds reference<br/>on 1st trading tick</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">Risk</div><div class="t">Kelly + throttle</div><div class="s">fractional-Kelly,<br/>drawdown throttle</div></div>
+      <div class="arrow">→</div>
+      <div class="node hot"><div class="n">Core</div><div class="t">decide()</div><div class="s">WATCH·TRADE·EXIT<br/>&lt;100ms</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">Executor</div><div class="t">Safe Roles</div><div class="s">signs &amp; submits<br/>via Roles modifier</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">Chain</div><div class="t">BID Protocol</div><div class="s">on-chain settle<br/>chain 42069</div></div>
+    </div>
+    <div class="clock">
+      <div class="band b1"><div class="ph">t = 0s · WATCH</div><div class="lb">Seed reference, stay flat</div></div>
+      <div class="band b2"><div class="ph">t = 15–160s · TRADE</div><div class="lb">Enter on confirmed breakout, scale out</div></div>
+      <div class="band b3"><div class="ph">t = 162s · EXIT / HOLD</div><div class="lb">Stop-loss exit · or hold for dissolution split</div></div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>Walk the pipe:</b> the on-chain clock drives everything — Feed → Signals → Risk → decide() → Executor → chain, in under 100ms. <b>Settlement-aware:</b> the exit logic is built around the protocol's dissolution settlement, not a price feed. <b>Roles modifier:</b> the agent trades through a Safe Roles module — scoped permissions, not a hot key with full control.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 6 — LIVE DEMO ════════════════ -->
+<section class="slide" id="s6">
+  <div class="kicker">Live demo</div>
+  <div class="grid-2" style="align-items:stretch">
+    <div style="display:flex;flex-direction:column;justify-content:center;position:relative">
+      <!-- SWAP: replace with ../docs/readme-hero.png -->
+      <div class="browser-frame contrast-check" style="position:relative">
+        <div class="browser-bar">
+          <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+          <span class="url mono">dashboard-pink-seven-20.vercel.app</span>
+        </div>
+        <img src="https://placehold.co/1080x720/161e28/10B981?text=Bankroll+curve+%2B+round+table+%2B+on-chain+reconciliation" alt="Skeet dashboard detail" />
+        <span class="callout" style="top:96px;left:40px">1</span>
+        <span class="callout" style="top:300px;right:60px">2</span>
+        <span class="callout" style="bottom:60px;left:120px">3</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:28px">
+      <ul class="ticks contrast-check">
+        <li><b>① Bankroll curve</b> — every round plotted, reconciled to on-chain balances.</li>
+        <li><b>② Per-round execution</b> — entry, scale-outs, exit reason, realized PnL.</li>
+        <li><b>③ On-chain proof</b> — totals match the Safe balances, not a local guess.</li>
+      </ul>
+      <!-- live-feel terminal -->
+      <div class="terminal-frame contrast-check">
+        <div class="terminal-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="t mono">skeet — agent daemon</span></div>
+        <div class="terminal-body">
+<span class="l"><span class="d">[FEED]</span> <span class="g">ref seeded</span> 0.03338</span>
+<span class="l"><span class="d">[FEED]</span> breakout @ t=15 → <span class="g">BUY 98 USDC</span></span>
+<span class="l"><span class="d">[FEED]</span> reversal → <span class="o">SELL_ALL</span> (stop -8%)</span>
+<span class="l"><span class="d">[FEED]</span> recovered <span class="g">72.58 USDC</span> · refill→100<span class="cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>Show, don't tell:</b> point at the three callouts — bankroll curve, per-round detail, on-chain reconciliation. <b>The terminal:</b> a real round — reference seeds, breakout entry, the stop-loss firing and recovering ~75% of the position, then the auto-refill. <b>Land it:</b> the discipline is visible in the logs.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 7 — KEY FEATURES ════════════════ -->
+<section class="slide" id="s7">
+  <div class="kicker">What's under the hood</div>
+  <div class="feat">
+    <div class="card big contrast-check" style="display:flex;flex-direction:column;justify-content:center">
+      <span class="ic" style="font-size:46px">🤖</span>
+      <h3 style="font-size:46px">Fully headless</h3>
+      <p style="font-size:23px;margin-top:14px">Generates its own keypair, registers itself on-chain, reads the game clock, and trades through a Safe Roles modifier — no wallet to connect, no human in the loop, 24/7.</p>
+    </div>
+    <div class="card contrast-check">
+      <span class="ic">🎯</span>
+      <h3>Game-clock state machine</h3>
+      <p>WATCH → TRADE → EXIT/HOLD, synchronized to on-chain phase transitions in &lt;100ms.</p>
+    </div>
+    <div class="card contrast-check">
+      <span class="ic">🛡️</span>
+      <h3>Capped-loss risk engine</h3>
+      <p>Fractional-Kelly sizing, quadratic drawdown throttle, and a hard stop — no single round can blow it up.</p>
+    </div>
+    <div class="card contrast-check">
+      <span class="ic">🔬</span>
+      <h3>185 tests · reproducible</h3>
+      <p>173 daemon + 12 dashboard, 100% statement coverage on core. Benchmarks re-runnable.</p>
+    </div>
+    <div class="card contrast-check">
+      <span class="ic">⛓️</span>
+      <h3>On-chain verifiable</h3>
+      <p>Every trade settles on chain 42069. PnL reconciles to Safe balances — nothing to trust.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>Pick three to say aloud:</b> headless self-registration, the on-chain game-clock state machine, and the capped-loss risk engine. <b>Credibility:</b> 185 tests and on-chain verifiability mean a judge can check every claim themselves. Don't read the cards — narrate them.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 8 — WHY US ════════════════ -->
+<section class="slide" id="s8">
+  <div class="grid-2">
+    <div>
+      <div class="kicker">Why this build</div>
+      <h2 class="contrast-check">Settlement-aware,<br/>not price-guessing.</h2>
+      <p class="lead contrast-check" style="margin-top:30px">The moat isn't a better prediction. It's an agent built around the protocol's <span class="em">terminal settlement</span> and engineered to adapt when the rules move.</p>
+    </div>
+    <div class="stack">
+      <div class="card contrast-check">
+        <span class="ic">⚡</span><h3>Adapted in hours</h3>
+        <p>When the market-making phase was removed, Skeet re-seeded its reference from the first trading tick and re-validated strategy on live data — same day.</p>
+      </div>
+      <div class="card contrast-check">
+        <span class="ic">🏛️</span><h3>Built on the protocol's mechanics</h3>
+        <p>Reads <span class="mono em">/api/game</span> phase + clock; exits around the on-chain pro-rata dissolution split, not a market price. No public DEX offers this.</p>
+      </div>
+      <div class="note green contrast-check">In a meta where <b>76% of agents are underwater</b>, discipline — not bravado — is the unfair advantage.</div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>The moat:</b> we're not betting on out-predicting the market — we built around the protocol's settlement and made the agent resilient to rule changes. <b>Proof of agility:</b> the mid-competition pivot is the demonstration. <b>Honest edge:</b> survival in a brutal field is itself differentiation.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 9 — TRACTION ════════════════ -->
+<section class="slide" id="s9">
+  <div class="kicker">Traction — shipped &amp; live</div>
+  <div class="grid-3" style="margin-top:10px">
+    <div class="card contrast-check" style="text-align:left">
+      <div class="stat em" style="font-size:96px">#33<span class="u"> / 124</span></div>
+      <p style="margin-top:14px">Leaderboard rank — top ~27% of the field, top of the custom builds.</p>
+    </div>
+    <div class="card contrast-check">
+      <div class="stat" style="font-size:96px">185<span class="u"> tests</span></div>
+      <p style="margin-top:14px">173 daemon + 12 dashboard. Decisions in <b class="em">&lt;100ms</b>.</p>
+    </div>
+    <div class="card contrast-check">
+      <div class="stat" style="font-size:96px">97<span class="u"> battles</span></div>
+      <p style="margin-top:14px">Self-registering daemon, live 24/7 on chain 42069 — every trade on-chain.</p>
+    </div>
+  </div>
+  <ul class="ticks contrast-check" style="margin-top:36px">
+    <li><b>Deployed:</b> live Next.js telemetry dashboard + 24/7 autonomous daemon.</li>
+    <li><b>Reconciled:</b> round-boundary PnL accounting that matches on-chain Safe balances.</li>
+  </ul>
+  <div class="note contrast-check" style="margin-top:28px"><b>Transparent:</b> cumulative PnL is currently negative in this pump-and-dump meta — by design, Skeet caps each round's loss rather than chase blow-up upside. Holding a top-27% rank while three-quarters of the field is underwater is the result of that discipline. Every number is verifiable on-chain.</div>
+  <aside class="speaker-notes"><b>Lead with what shipped:</b> 185 tests, a live dashboard, 97 real battles, sub-100ms decisions. <b>Be honest about PnL:</b> don't dodge it — say it's negative, explain it's the cost of a capped-loss design in a brutal meta, and that the rank holds. Judges reward candor over inflated claims.</aside>
+</section>
+
+<!-- ════════════════ SLIDE 10 — THE ASK ════════════════ -->
+<section class="slide" id="s10">
+  <div class="grid-2" style="align-items:center">
+    <div>
+      <div class="kicker">The ask</div>
+      <h2 class="contrast-check">Verify it<br/>on-chain.</h2>
+      <p class="lead contrast-check" style="margin-top:28px">Don't take our word for it — open the live leaderboard and the dashboard. Every battle, every trade, every balance is public.</p>
+      <ul class="ticks contrast-check" style="margin-top:26px">
+        <li><b>Leaderboard:</b> <span class="mono">dash.creator.bid</span></li>
+        <li><b>Dashboard:</b> <span class="mono">dashboard-pink-seven-20.vercel.app</span></li>
+        <li><b>Agent:</b> <span class="mono dim">0x6103…766B</span> · chain 42069</li>
+      </ul>
+      <h3 class="em contrast-check" style="margin-top:44px;font-size:46px">In a casino, the edge is not blowing up.</h3>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+      <!-- SWAP: replace with a QR code PNG pointing to dashboard-pink-seven-20.vercel.app -->
+      <img src="https://placehold.co/360x360/0A0E14/10B981?text=QR+%E2%86%92+live+dashboard" alt="QR to live dashboard" style="border:1px solid var(--line);border-radius:18px" />
+      <span class="chip dot">scan → watch it trade live</span>
+    </div>
+  </div>
+  <aside class="speaker-notes"><b>Close strong:</b> the ask is simply — verify us. Open the leaderboard, open the dashboard, check the chain. <b>Closer line:</b> "In a casino, the edge is not blowing up." <b>Leave them with:</b> a from-scratch, fully verifiable, resilient agent — built and shipped, running right now.</aside>
+</section>
+
+</div><!-- /#stage -->
+
+<!-- overview grid (ESC) -->
+<div id="overview"></div>
+
+<div id="progress"></div>
+<div id="counter"><b id="cur">01</b> / <span id="tot">10</span></div>
+<div id="hint"><b>→</b> next · <b>P</b> presenter · <b>C</b> contrast · <b>ESC</b> grid · <b>⌘P</b> PDF</div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var titles=["Cover","Hook","Problem","Solution","How it works","Live demo","Features","Why us","Traction","The ask"];
+  var i=0, n=slides.length;
+  document.getElementById('tot').textContent=String(n).padStart(2,'0');
+
+  function pad(x){return String(x+1).padStart(2,'0')}
+  function show(idx){
+    i=Math.max(0,Math.min(n-1,idx));
+    slides.forEach(function(s,k){s.classList.toggle('active',k===i)});
+    document.getElementById('cur').textContent=pad(i);
+    document.getElementById('progress').style.width=((i+1)/n*100)+'%';
+  }
+  function next(){show(i+1)} function prev(){show(i-1)}
+
+  // ── fit 1920×1080 stage to viewport ──
+  function fit(){
+    var s=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+    document.getElementById('stage').style.setProperty('--scale',s);
+  }
+  window.addEventListener('resize',fit); fit();
+
+  // ── overview grid ──
+  var ov=document.getElementById('overview');
+  slides.forEach(function(s,k){
+    var d=document.createElement('div');
+    d.className='ov-thumb';
+    d.innerHTML='<div class="num">'+pad(k)+' / '+String(n).padStart(2,'0')+'</div><div class="ttl">'+titles[k]+'</div>';
+    d.onclick=function(){show(k);document.body.classList.remove('overview')};
+    ov.appendChild(d);
+  });
+
+  document.addEventListener('keydown',function(e){
+    var k=e.key;
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){e.preventDefault();next()}
+    else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev()}
+    else if(k==='Home'){show(0)} else if(k==='End'){show(n-1)}
+    else if(k==='Escape'){document.body.classList.toggle('overview')}
+    else if(k==='p'||k==='P'){document.body.classList.toggle('presenter')}
+    else if(k==='c'||k==='C'){document.body.classList.toggle('debug-contrast')}
+  });
+
+  // click-advance (ignore in presenter/overview)
+  document.getElementById('stage').addEventListener('click',function(e){
+    if(document.body.classList.contains('overview'))return;
+    if(e.clientX < window.innerWidth*0.25){prev()}else{next()}
+  });
+
+  show(0);
+})();
+</script>
+</body>
+</html>
