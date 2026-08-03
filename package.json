@@ -20,7 +20,7 @@
     "benchmark": "tsx scripts/leaderboard_benchmark.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^13.0.2",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0"
   },
