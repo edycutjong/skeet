@@ -900,7 +900,7 @@ describe("runFeed game loop orchestrator tests", () => {
     const sellAllSaveCall = mockSaveRound.mock.calls.find(
       (c) => c[1].exit_t > 0,
     );
-    expect(sellAllSaveCall).toBeDefined();
+    if (!sellAllSaveCall) throw new Error("expected a sell-all saveRound call");
     expect(sellAllSaveCall[1].buy_usdc).toBe(500);
     expect(sellAllSaveCall[1].pnl_usdc).toBe(0);
   });
